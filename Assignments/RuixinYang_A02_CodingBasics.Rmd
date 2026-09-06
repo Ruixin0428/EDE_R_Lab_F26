@@ -75,7 +75,7 @@ mean_sequence > median_sequence
 student_names <- c("Tom", "Jerry", "Phineas", "Ferb")
 #b test scores (numeric vector)
 test_scores <- c(90, 80, 70, 40)
-#c whether they are on scholarship or not (logical vectore)
+#c whether they are on scholarship or not (logical vector)
 scholarship <- c(TRUE, FALSE, TRUE, FALSE)
 
 #7. Combine each of the vectors into a data frame
@@ -83,6 +83,8 @@ student_dataset <- data.frame(student_names, test_scores, scholarship)
 
 #8. Label the columns of the data frame with informative titles
 names(student_dataset) <- c("Student_Names", "Test_Scores", "Scholarship_Status")
+student_dataset
+
 ```
 
 9.  QUESTION: How is this data frame different from a matrix?
