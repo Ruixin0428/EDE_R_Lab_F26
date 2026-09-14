@@ -1,0 +1,211 @@
+---
+title: "Assignment 3: Data Exploration"
+author: "Ruixin Yang"
+output: pdf_document
+geometry: margin=2.54cm
+editor_options: 
+  chunk_output_type: console
+---
+
+## OVERVIEW
+
+This exercise accompanies the lessons in Environmental Data Exploration M3: Data Exploration.
+
+## Directions
+
+1.  Rename this file `<FirstLast>_A03_DataExploration.Rmd` (replacing `<FirstLast>` with your first and last name).
+2.  Change "Student Name" on line 3 (above) with your name.
+3.  Work through the steps, **creating code and output** that fulfill each instruction. 
+4.  Assign a useful **name to each code chunk** and include ample **comments** with your code.
+5.  Be sure to **answer the questions** in this assignment document.
+6.  When you have completed the assignment, **Knit** the text and code into a single PDF file.
+7.  After Knitting, submit the completed exercise (PDF file) to the dropbox in Canvas.
+
+**TIP**: If your code extends past the page when knit, tidy your code by manually inserting line breaks.
+
+**TIP**: If your code fails to knit, check that no `install.packages()` or `View()` commands exist in your code. 
+
+---
+
+## Set up your R session
+
+1.  Load necessary packages (tidyverse, lubridate, here), check your current working directory and upload two datasets: the ECOTOX neonicotinoid dataset (ECOTOX_Neonicotinoids_Insects_raw.csv) and the Niwot Ridge NEON dataset for litter and woody debris (NEON_NIWO_Litter_massdata_2016-26_raw.csv). Name these datasets "Neonics" and "Litter", respectively.
+
+```{r setup,  message = FALSE}
+library(tidyverse)
+library(lubridate)
+library(here)
+
+# Check the current working directory
+getwd()
+
+# Import the ECOTOX dataset
+Neonics <- read.csv(
+  here("Data", "Raw", "ECOTOX_Neonicotinoids_Insects_raw.txt"),
+  sep = "|",
+  strip.white = TRUE
+)
+
+# Import the NEON litter dataset
+Litter <- read.csv(
+  here("Data", "Raw", "NEON_NIWO_Litter_massdata_2016-26_raw.csv")
+)
+
+```
+
+## Learn about your system
+
+2.  The neonicotinoid dataset was collected from the Environmental Protection Agency's ECOTOX Knowledgebase, a database for ecotoxicology research. Neonicotinoids are a class of insecticides used widely in agriculture. The dataset that has been pulled includes all studies published on insects. Why might we be interested in the ecotoxicology of neonicotinoids on insects? Feel free to do a brief internet search if you feel you need more background information.
+
+> Answer: Although these pesticides can be used to kill agricultural pests, they may also affect non-target insects and even beneficial insects, thereby impacting plant pollination and even the food chain.
+
+3.  The Niwot Ridge litter and woody debris dataset was collected from the National Ecological Observatory Network, which collectively includes 81 aquatic and terrestrial sites across 20 ecoclimatic domains. 32 of these sites sample forest litter and woody debris, and we will focus on the Niwot Ridge long-term ecological research (LTER) station in Colorado. Why might we be interested in studying litter and woody debris that falls to the ground in forests? Feel free to do a brief internet search if you feel you need more background information.
+
+> Answer:Litter and wood debris can provide nutrients from the plant back to the soil, and measuring these substances can be used to estimate forest productivity and biomass.
+
+4.  How is litter and woody debris sampled as part of the NEON network? Read the NEON_Litterfall_UserGuide.pdf document to learn more. List three pieces of salient information about the sampling methods here:
+
+> Answer: 
+> 1.Litter shorter than 50 cm is collected in elevated 0.5-m² mesh traps placed about 80 cm above the ground. Fine woody debris longer than 50 cm is collected in 3 m × 0.5 m ground traps.
+> 2.Trap placement depends on vegetation cover. Traps are placed randomly at sites with more than 50% aerial cover of woody vegetation taller than 2 m, but are targeted beneath suitable vegetation at sites with less than 50% cover or patchy vegetation.
+> 3. Ground traps are sampled once per year. Elevated traps may be sampled every two weeks during leaf fall in deciduous forests, but only every one to two months at evergreen sites.
+
+## Obtain basic summaries of your data (Neonics)
+
+5.  What are the dimensions of the dataset?
+
+```{r neonics-dimensions}
+# Dimensions of the Neonics
+dim(Neonics)
+
+```
+
+6.  Using the `summary` function on the "Effect" column, determine the most common effects that are studied. Why might these effects specifically be of interest? [Tip: The `sort()` command is useful for listing the values in order of magnitude...]
+
+```{r effect-summary}
+# Count each effect and sort the counts from highest to lowest
+sort(
+  summary(as.factor(Neonics$Effect)),
+  decreasing = TRUE
+)
+
+```
+
+> Answer: Mortality is the most frequently studied effect, followed by population, genetics, behavior, feeding behavior, and reproduction. These effects help researchers understand the possible impacts of neonicotinoids on insect survival, behavior, reproduction, and long-term population health.
+
+
+7.  Using the `summary` function, determine the six most commonly studied species in the dataset (common name). What do these species have in common, and why might they be of interest over other insects? Feel free to do a brief internet search for more information if needed.[TIP: Explore the help on the `summary()` function, in particular the `maxsum` argument...]
+
+```{r species-summary}
+summary(
+  as.factor(Neonics$X.Species.Common.Name),
+  maxsum = 7)
+
+```
+
+> Answer: Most commonly studied insects are bees (5 out of 6), and all belong to the order Hymenoptera. They can act as pollinators or provide biological pest control. They are of particular interest because neonicotinoids may unintentionally harm these beneficial insects and affect important ecosystem services and agriculture.
+
+8.  Concentrations are always a numeric value. What is the class of `Conc.1.Mean..Author..` column in the dataset, and why is it not numeric? [Tip: Viewing the dataframe may be helpful...]
+
+```{r concentration-class}
+# Check the data type of the concentration column
+class(Neonics$X.Conc.1.Mean..Author..)
+
+```
+
+> Answer: The column is classified as character. Although concentrations are numeric, some entries contain “/” and “NR.” Therefore, R imports the entire column as character rather than numeric.
+
+## Explore your data graphically (Neonics)
+
+9. Create a bar graph of Endpoint counts. What are the two most common end points, and how are they defined? Consult the ECOTOX_CodeAppendix for more information. 
+
+[**TIP**: Add `theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))` to the end of your plot command to rotate and align the X-axis labels...]
+
+```{r endpoint-barplot}
+# List endpoint counts from highest to lowest
+sort(
+  summary(factor(Neonics$Endpoint.)),
+  decreasing = TRUE
+)
+
+# Create a bar graph of endpoint counts
+ggplot(Neonics, aes(x = Endpoint.)) +
+  geom_bar() +
+  theme(
+    axis.text.x = element_text(
+      angle = 90,
+      vjust = 0.5,
+      hjust = 1
+    )
+  )
+
+```
+
+> Answer: The two most common endpoints are LOEL and NOEL. LOEL is Lowest Observed Effect Level, which means the lowest tested concentration at an effect is observed. NOEL is No Observed Effect Level, which means the highest tested concentration at no effect is observed.
+
+## Explore your data (Litter)
+
+10. Determine the class of collectDate. Is it a date? If not, change to a date and confirm the new class of the variable. Using the `unique` function, determine which dates litter was sampled in August 2018.
+
+```{r litter-dates}
+class(Litter$collectDate)
+
+# Convert collectDate from character to Date
+Litter$collectDate <- ymd(Litter$collectDate)
+
+class(Litter$collectDate)
+
+# Find the unique sampling dates in August 2018
+unique(
+  Litter$collectDate[
+    year(Litter$collectDate) == 2018 &
+      month(Litter$collectDate) == 8
+  ]
+)
+
+```
+
+11. Using the `unique` function, list the different plotIDs sampled at Niwot Ridge. How is the information obtained from `unique` different from that obtained from `summary`?
+
+```{r unique/summary}
+unique(Litter$plotID)
+
+summary(as.factor(Litter$plotID))
+
+```
+
+> Answer: unique() will display all the sampling locations. Each plotID will only be shown once. However, summary() not only lists the different plotIDs, but also shows how many observation records each plotID corresponds to.
+
+12. Create a bar graph of functionalGroup counts. This shows you what type of litter is collected at the Niwot Ridge sites. Notice that litter types are fairly equally distributed across the Niwot Ridge sites.
+
+```{r bar graph of functionalGroup counts}
+# Create a bar graph of functional-group counts
+ggplot(Litter, aes(x = functionalGroup)) +
+  geom_bar() +
+  theme(
+    axis.text.x = element_text(
+      angle = 45,
+      hjust = 1
+    )
+  ) 
+
+```
+
+
+What type(s) of litter tend to have the highest biomass at these sites?
+
+> Answer: Needles tend to have the highest biomass.
+
+13. Write a short data-exploration summary for Neonics.
+
+> - **One key characteristic:** The dataset contains 8,748 observations and 76 variables, including insect species, pesticide exposure, concentrations, observed effects, and toxicity endpoints.
+> - **One data-quality issue:** The concentration column is "character" because some values contain symbols or codes such as “/” and “NR.”
+> - **One interesting pattern:** Various types of bees are dominant in the dataset. This shows that much of the research attention has focused on pollinators.
+> - **One question for further analysis:** How do different neonicotinoid concentrations affect mortality across bee species?
+
+14. Write a short data-exploration summary for Litter.
+
+> - **One key characteristic:** This dataset records the collection of litter by sampling date, plot location, functional group, and the dry mass of each sample.
+> - **One data-quality issue:** The collectDate variable was originally stored as character and can be converted to a Date object.
+> - **One interesting pattern:** The biomass of needles is usually the highest, but the counts of each group are very similar.
+> - **One question for further analysis:** How does the litter biomass change at different times (such as in different seasons or different years)?
