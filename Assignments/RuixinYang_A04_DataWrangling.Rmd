@@ -1,6 +1,6 @@
 ---
 title: "Assignment 4: Data Wrangling"
-author: "Student Name"
+author: "Ruixin Yang"
 output: pdf_document
 geometry: margin=2.54cm
 ---
@@ -44,14 +44,6 @@ library(here)
 getwd()
 
 #1c 
-
-list.files(
-  path = here(),
-  pattern = "EPAair",
-  recursive = TRUE,
-  full.names = TRUE
-)
-
 O3.2024 <- read.csv(
   here("Data/Raw/EPAair_O3_NC2024_raw.csv")
 )
@@ -309,6 +301,10 @@ EPAair.daily <- EPAair.combined %>%
 
 # Check dimensions
 dim(EPAair.daily)
+
+# Check the classes of Month and Year
+class(EPAair.daily$Month)
+class(EPAair.daily$Year)
 
 ```
 
